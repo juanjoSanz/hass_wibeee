@@ -111,7 +111,8 @@ wibeee_phase4:
 ```
 
 # Example View in Home Assistant
-Inline-style: 
+
+
 ![hass_view](https://community-home-assistant-assets.s3.dualstack.us-west-2.amazonaws.com/original/3X/8/4/84825f0d8c1653e37be87c0ed4fa68d4832c8bc0.png "Example View in Home Assistant")
 
 
