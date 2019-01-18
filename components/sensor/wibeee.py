@@ -66,9 +66,10 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
     _LOGGER.info("Response: %s", wibeee_data.data)
     tree = ElementTree.fromstring(wibeee_data.data)
-
+    
     devices = []
     for item in tree:
+      try:
         sensor_id = item.tag
         sensor_phase,sensor_name = item.tag.split("_",1)
         sensor_phase = sensor_phase.replace("fase","")
@@ -77,6 +78,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         _LOGGER.info("Adding sensor %s with value %s", sensor_id, sensor_value)
 
         devices.append(WibeeeSensor(hass, wibeee_data, name, sensor_id, sensor_phase, sensor_name,sensor_value))
+      except:
+        pass
 
     add_devices(devices, True)
 
