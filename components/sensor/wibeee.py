@@ -17,6 +17,9 @@ from homeassistant.util import Throttle
 import homeassistant.helpers.config_validation as cv
 
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 from xml.etree import ElementTree
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
