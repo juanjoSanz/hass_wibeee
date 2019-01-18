@@ -17,7 +17,18 @@ http://<wibeee_ip>/en/status.xml
 
 Example XML are listed in hithub repository
 
+# Home Assistant configuration
 
+1.- Copy custom comonent into “custom_components/sensor/wibeee.py”
+
+2.- Add device to home assistant configuration file configuration.yaml
+
+```
+- platform: wibeee
+  name: "Wibeee"
+  host: 192.168.xx.xx
+  scan_interval: 5
+```
 
 # Useful links
 
