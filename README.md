@@ -35,6 +35,81 @@ Example XML are listed in hithub repository
   scan_interval: 5
 ```
 
+3.- Add new created sensors to groups.yaml (optional)
+
+```
+supplies_view:
+  view: yes
+  name: Supplies
+  #icon: mdi:network
+  entities:
+    - group.wibeee_phase1
+    - group.wibeee_phase2
+    - group.wibeee_phase3
+    - group.wibeee_phase4
+
+....
+....
+
+
+wibeee_phase1:
+  name: 'Wibeee Phase 1'
+  entities:
+    - sensor.wibeee_phase1_active_energy
+    - sensor.wibeee_phase1_active_power
+    - sensor.wibeee_phase1_apparent_power
+    - sensor.wibeee_phase1_capacitive_reactive_energy
+    - sensor.wibeee_phase1_capacitive_reactive_power
+    - sensor.wibeee_phase1_frequency
+    - sensor.wibeee_phase1_inductive_reactive_energy
+    - sensor.wibeee_phase1_inductive_reactive_power
+    - sensor.wibeee_phase1_irms
+    - sensor.wibeee_phase1_power_factor
+    - sensor.wibeee_phase1_vrms
+wibeee_phase2:
+  name: 'Wibeee Phase 2'
+  entities:
+    - sensor.wibeee_phase2_active_energy
+    - sensor.wibeee_phase2_active_power
+    - sensor.wibeee_phase2_apparent_power
+    - sensor.wibeee_phase2_capacitive_reactive_energy
+    - sensor.wibeee_phase2_capacitive_reactive_power
+    - sensor.wibeee_phase2_frequency
+    - sensor.wibeee_phase2_inductive_reactive_energy
+    - sensor.wibeee_phase2_inductive_reactive_power
+    - sensor.wibeee_phase2_irms
+    - sensor.wibeee_phase2_power_factor
+    - sensor.wibeee_phase2_vrms
+wibeee_phase3:
+  name: 'Wibeee Phase 3'
+  entities:
+    - sensor.wibeee_phase3_active_energy
+    - sensor.wibeee_phase3_active_power
+    - sensor.wibeee_phase3_apparent_power
+    - sensor.wibeee_phase3_capacitive_reactive_energy
+    - sensor.wibeee_phase3_capacitive_reactive_power
+    - sensor.wibeee_phase3_frequency
+    - sensor.wibeee_phase3_inductive_reactive_energy
+    - sensor.wibeee_phase3_inductive_reactive_power
+    - sensor.wibeee_phase3_irms
+    - sensor.wibeee_phase3_power_factor
+    - sensor.wibeee_phase3_vrms
+wibeee_phase4:
+  name: 'Wibeee Phase 4 = Total'
+  entities:
+    - sensor.wibeee_phase4_active_energy
+    - sensor.wibeee_phase4_active_power
+    - sensor.wibeee_phase4_apparent_power
+    - sensor.wibeee_phase4_capacitive_reactive_energy
+    - sensor.wibeee_phase4_capacitive_reactive_power
+    - sensor.wibeee_phase4_frequency
+    - sensor.wibeee_phase4_inductive_reactive_energy
+    - sensor.wibeee_phase4_inductive_reactive_power
+    - sensor.wibeee_phase4_irms
+    - sensor.wibeee_phase4_power_factor
+    - sensor.wibeee_phase4_vrms
+```
+
 # Useful links
 
 Home Assistant community
