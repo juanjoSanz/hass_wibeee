@@ -4,9 +4,11 @@ This is a custom component developed original for its integration with Circuitor
 
 This concept has been proved on similar devices that are listed below:
 
-|Circuitor Wibeee (3 phases)| http://wibeee.circutor.com/index_en.html 
-|Circuitor Wibeee (1 phase)|  http://wibeee.circutor.com/index_en.html 
-|Mirubee (which model?)|  https://mirubee.com/es/3-productos
+| Device        | Model           | Link  |
+| ------------- |:-------------:| -----:|
+|Circuitor Wibeee| 3 phases | http://wibeee.circutor.com/index_en.html |
+|Circuitor Wibeee| 1 phase |  http://wibeee.circutor.com/index_en.html  |
+|Mirubee| Unkownn models |  https://mirubee.com/es/3-productos |
 
 
 # How it works
@@ -19,7 +21,10 @@ Example XML are listed in hithub repository
 
 # Home Assistant configuration
 
-1.- Copy custom comonent into “custom_components/sensor/wibeee.py”
+1.- Copy custom comonent into 
+```
+<hass_folder>/custom_components/sensor/wibeee.py
+```
 
 2.- Add device to home assistant configuration file configuration.yaml
 
