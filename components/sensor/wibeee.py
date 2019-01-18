@@ -28,40 +28,6 @@ url = ""
 DEFAULT_METHOD = 'GET'
 DEFAULT_NAME = 'Wibeee Energy Consumption Sensor'
 
-#	Vrms</td>
-#	"vrms"></td>
-#	Irms</td>
-#	"irms"></td>
-#	Frequency</td>
-#	"frecuencia"></td>
-#	Active Power</td>
-#	"p_activa"></td>
-#	Inductive Reactive Power</td>
-#	"p_reactiva_ind"></td>
-#	Capacitive Reactive Power</td>
-#	"p_reactiva_cap"></td>
-#	Apparent Power</td>
-#	"p_aparent"></td>
-#	Power Factor</td>
-#	"factor_potencia"></td>
-#	Active Energy</td>
-#	"energia_activa"></td>
-#	Inductive Reactive Energy</td>
-#	"energia_reactiva_ind"></td>
-#	Capacitive Reactive Energy</td>
-#	"energia_reactiva_cap"></td>
-#
-# <fase1_vrms>239.63</fase1_vrms>
-#<fase1_irms>0.86</fase1_irms>
-#<fase1_p_aparent>205.10</fase1_p_aparent>
-#<fase1_p_activa>19.45</fase1_p_activa>
-#<ease1_p_reactiva_ine>197.52</fase1_p_reactiva_ind>
-#<fase1_p_reactiva_cap>0.00</fase1_p_reactiva_cap>
-#<fase1_frecuencia>50.02</fase1_frecuencia>
-#<fase1_factor_potencia>-0.095</fase1_factor_potencia>
-#<fase1_energia_activa>30264.84</fase1_energia_activa>
-#<fase1_energia_reactiva_ind>87130.35</fase1_energia_reactiva_ind>
-#<fase1_energia_reactiva_cap>8066.87</fase1_energia_reactiva_cap>
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=10)   # Default value
 
