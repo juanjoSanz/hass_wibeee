@@ -8,7 +8,15 @@ This concept has been proved on similar devices that are listed below:
 | ------------- |:-------------:| -----:|
 |Circuitor Wibeee| 3 phases | http://wibeee.circutor.com/index_en.html |
 |Circuitor Wibeee| 1 phase |  http://wibeee.circutor.com/index_en.html  |
-|Mirubee| Unkown models |  https://mirubee.com/es/3-productos |
+|Mirubee| Unknown models |  https://mirubee.com/es/3-productos |
+
+## ToDo
+
+
+**Notable breaking change**
+>
+>We finished the great migration. All built-in platforms are now in their own folder. This means that if you had a custom >component or platform that had the same name as a built-in one, you have to rename it. If you still have platforms in your >custom_components/ directory in the old file format, sensor/my_platform.py , rename it to my_platform/sensor.py . It still >works but it will not be supported in a future release.
+>
 
 
 # How it works
