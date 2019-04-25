@@ -1,0 +1,8 @@
+{
+  "domain": "wibeee",
+  "name": "wibeee",
+  "documentation": "https://github.com/juanjoSanz/hass_wibeee",
+  "dependencies": [],
+  "codeowners": ["@juanjoSanz"],
+  "requirements": []
+}
