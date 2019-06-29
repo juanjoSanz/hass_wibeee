@@ -4,35 +4,61 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/sensor.circutor_wibeee/ (ToDO)
 """
 
+
+# TODO
+#
+# ref: https://raw.githubusercontent.com/custom-components/sensor.versions/master/custom_components/sensor/versions.py
+
+
 import logging
 from datetime import timedelta
 
 import voluptuous as vol
 
+import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import (
-    CONF_NAME, CONF_HOST, CONF_SCAN_INTERVAL)
+from homeassistant.const import CONF_NAME, CONF_HOST, CONF_SCAN_INTERVAL, CONF_RESOURCE, CONF_METHOD
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
-import homeassistant.helpers.config_validation as cv
-
+# Custom Imports
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
 from xml.etree import ElementTree
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
+__version__ = '0.0.1'
+
+REQUIREMENTS = ['pyhaversion==2.0.1']
+
 _LOGGER = logging.getLogger(__name__)
-_RESOURCE = 'http://{}/en/status.xml'
-url = ""
+
+CONF_HOST = ""
+CONF_RESOURCE = 'http://{}/en/status.xml'
+CONF_METHOD = "GET"
 
 
-DEFAULT_METHOD = 'GET'
 DEFAULT_NAME = 'Wibeee Energy Consumption Sensor'
+DEFAULT_HOST = ""
+DEFAULT_RESOURCE = 'http://{}/en/status.xml'
+DEFAULT_METHOD = "GET"
+
+ICON = 'mdi:package-up'
 
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=10)   # Default value
+TIME_BETWEEN_UPDATES = timedelta(seconds=10)   # Default value
+
+
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Optional(CONF_IMAGE, default=DEFAULT_IMAGE): cv.string,
+    vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+    vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,    
+    vol.Optional(CONF_RESOURCE, default=DEFAULT_RESOURCE): cv.string,        
+    vol.Optional(CONF_METHOD, default=DEFAULT_METHOD): cv.string,         
+})
+
+
 
 SENSOR_TYPES = {
     'vrms': ['Vrms', 'V'],
@@ -49,22 +75,26 @@ SENSOR_TYPES = {
 }
 
 
-def setup_platform(hass, config, add_devices, discovery_info=None):
-    """Set up the RESTful sensor."""
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+     """Set up the RESTful sensor."""
+    from pyhaversion import Version
     name = config.get(CONF_NAME)
     host = config.get(CONF_HOST)
+    url = config.get(CONF_RESOURCE)
     scan_interval = config.get(CONF_SCAN_INTERVAL)
 
-
+    session = async_get_clientsession(hass)
+    haversion = VersionData(Version(hass.loop, session), source)
+    
+    
     # Create a data fetcher. Then make first call
     try:
-        wibeee_data = WibeeeData(host, scan_interval)
+        wibeee_data = WibeeeData(host, url, scan_interval)
     except ValueError as error:
         _LOGGER.error(error)
         return False
-
-
-    _LOGGER.info("Response: %s", wibeee_data.data)
+    
+        _LOGGER.info("Response: %s", wibeee_data.data)
     tree = ElementTree.fromstring(wibeee_data.data)
     
     devices = []
@@ -81,12 +111,15 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
       except:
         pass
 
-    add_devices(devices, True)
+    #add_devices(devices, True)
+    async_add_entities([VersionSensor(haversion, devices)], True)
 
+    
+  
 
 
 class WibeeeSensor(Entity):
-    """Implementation of Wibeee sensor."""
+    """Representation of a Home Assistant Wibeee sensor."""
 
     def __init__(self, hass, wibeee_data, name, sensor_id, sensor_phase, sensor_name, sensor_value):
         """Initialize the sensor."""
@@ -98,6 +131,10 @@ class WibeeeSensor(Entity):
         self._sensor_name = SENSOR_TYPES[sensor_name][0].replace(" ", "_")
         self._state = sensor_value
         self._unit_of_measurement = SENSOR_TYPES[sensor_name][1]
+
+    async def async_update(self):
+        """Get the latest version information."""
+        await self.haversion.async_update()
 
     @property
     def name(self):
@@ -112,7 +149,13 @@ class WibeeeSensor(Entity):
     @property
     def state(self):
         """Return the state of the device."""
+        #return self.haversion.api.version
         return self._state
+    
+    @property
+    def device_state_attributes(self):
+        """Return attributes for the sensor."""
+        return self.haversion.api.version_data
 
     def update(self):
         """Get the latest data from API and updates the states."""
@@ -139,23 +182,33 @@ class WibeeeSensor(Entity):
 class WibeeeData(object):
     """Gets the latest data from HP ILO."""
 
-    def __init__(self, host, scan_interval):
+    def __init__(self, host, url, scan_interval):
         """Initialize the data object."""
         self._host = host
-        self._url = _RESOURCE.format(host)
+        self._url = url.format(host)
         self._scan_interval = scan_interval
-        #MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=int(self._scan_interval))
+        #TIME_BETWEEN_UPDATES = timedelta(seconds=int(self._scan_interval))
 
         self.data = None
 
         self.update()
 
-    @Throttle(MIN_TIME_BETWEEN_UPDATES)
-    def update(self):
-        """Get the latest data"""
-
+    @Throttle(TIME_BETWEEN_UPDATES)
+    def async_update(self):
+        """Get the latest data and update the states"""
+        #if self.source == 'pypi':
+        #    await self.api.get_pypi_version()
+        #elif self.source == 'hassio':
+        #    await self.api.get_hassio_version()
+        #elif self.source == 'docker':
+        #    await self.api.get_docker_version()
+        #else:
+        #    await self.api.get_local_version()
         try:
             response = requests.get(self._url, timeout=10)
             self.data = response.content
         except ValueError as error:
             raise ValueError("Unable to obtain any response from %s, %s", self._url, error)
+            
+
+
