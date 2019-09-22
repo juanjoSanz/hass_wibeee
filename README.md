@@ -38,10 +38,10 @@ Example XML are listed in hithub repository
 
 ```
 - platform: wibeee
-  name: "Wibeee"
   host: 192.168.xx.xx
   scan_interval: 5
 ```
+*name* tag removed due to incompatibilities
 
 3.- Add new created sensors to groups.yaml (optional)
 
