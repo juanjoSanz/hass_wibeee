@@ -12,11 +12,8 @@ This concept has been proved on similar devices that are listed below:
 
 ## ToDo
 
-
-**Notable breaking change**
->
->We finished the great migration. All built-in platforms are now in their own folder. This means that if you had a custom >component or platform that had the same name as a built-in one, you have to rename it. If you still have platforms in your >custom_components/ directory in the old file format, sensor/my_platform.py , rename it to my_platform/sensor.py . It still >works but it will not be supported in a future release.
->
+There is a new project in Github, a CLI in Python for these devices that may be helpful for future integrations of this custom component:
+https://github.com/fquinto/pywibeee
 
 
 # How it works
