@@ -1,20 +1,14 @@
-""" Suport for Circutor Energy consumption analyzer http://wibeee.circutor.com/
+"""
+Support for Energy consumption Sensors from Circutor
 
-For more details about this platform, please refer to the documentation at
-https://home-assistant.io/components/sensor.circutor_wibeee/ (ToDO)
+Device's website: http://wibeee.circutor.com/
+Documentation: https://github.com/juanjoSanz/hass_wibeee/
 """
 
 import logging
 from datetime import timedelta
 
 import voluptuous as vol
-
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import (
-    CONF_NAME, CONF_HOST, CONF_SCAN_INTERVAL)
-from homeassistant.helpers.entity import Entity
-from homeassistant.util import Throttle
-import homeassistant.helpers.config_validation as cv
 
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -23,46 +17,67 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 from xml.etree import ElementTree
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
+
+from homeassistant.const import (POWER_WATT, ENERGY_KILO_WATT_HOUR, ENERGY_WATT_HOUR,
+				 CONF_HOST, CONF_SCAN_INTERVAL, CONF_RESOURCE, CONF_METHOD) #, CONF_PHASES)
+from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.helpers.entity import Entity
+from homeassistant.helpers import config_validation as cv
+
+
+
 _LOGGER = logging.getLogger(__name__)
 _RESOURCE = 'http://{}/en/status.xml'
 url = ""
 
-
-DEFAULT_METHOD = 'GET'
+DOMAIN = 'wibeee_energy'
 DEFAULT_NAME = 'Wibeee Energy Consumption Sensor'
+DEFAULT_HOST = ''
+DEFAULT_RESOURCE = 'http://{}/en/status.xml'
+DEFAULT_SCAN_INTERVAL = 10
+DEFAULT_METHOD = "GET"
+DEFAULT_PHASES = 3
 
+
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,    
+    vol.Optional(CONF_RESOURCE, default=DEFAULT_RESOURCE): cv.string,
+    vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
+    vol.Optional(CONF_METHOD, default=DEFAULT_METHOD): vol.In(['GET']),
+#    vol.Optional(CONF_PHASES, default=DEFAULT_PHASES): vol.In([1, 3]),
+})
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=10)   # Default value
+
 
 SENSOR_TYPES = {
     'vrms': ['Vrms', 'V'],
     'irms': ['Irms', 'A'],
     'frecuencia': ['Frequency', 'Hz'],
-    'p_activa': ['Active Power', 'W'],
+    'p_activa': ['Active Power', POWER_WATT],
     'p_reactiva_ind': ['Inductive Reactive Power', 'VArL'],
     'p_reactiva_cap': ['Capacitive Reactive Power', 'VArC'],
     'p_aparent': ['Apparent Power', 'VA'],
-    'factor_potencia': ['Power Factor', ' '],
-    'energia_activa': ['Active Energy', 'Wh'],
+    'factor_potencia': ['Power Factor', ''],
+    'energia_activa': ['Active Energy', ENERGY_WATT_HOUR],
     'energia_reactiva_ind': ['Inductive Reactive Energy', 'VArLh'],
     'energia_reactiva_cap': ['Capacitive Reactive Energy', 'VArCh']
 }
 
 
+
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the RESTful sensor."""
-    name = config.get(CONF_NAME)
+    name = "wibeee"
     host = config.get(CONF_HOST)
     scan_interval = config.get(CONF_SCAN_INTERVAL)
 
-
-    # Create a data fetcher. Then make first call
+    # Create a dataº fetcher. Then make first call
     try:
         wibeee_data = WibeeeData(host, scan_interval)
     except ValueError as error:
         _LOGGER.error(error)
         return False
-
 
     _LOGGER.info("Response: %s", wibeee_data.data)
     tree = ElementTree.fromstring(wibeee_data.data)
@@ -150,7 +165,7 @@ class WibeeeData(object):
 
         self.update()
 
-    @Throttle(MIN_TIME_BETWEEN_UPDATES)
+    #@Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
         """Get the latest data"""
 
@@ -159,3 +174,4 @@ class WibeeeData(object):
             self.data = response.content
         except ValueError as error:
             raise ValueError("Unable to obtain any response from %s, %s", self._url, error)
+
