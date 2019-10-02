@@ -1,3 +1,6 @@
-"""The wibeee component."""
+"""
+Support for Energy consumption Sensors from Circutor
 
-# New sensor format Reference https://github.com/home-assistant/home-assistant/blob/cfd8d708904208ef6f1afafd214704b2095f7b10/homeassistant/components/pi_hole/sensor.py
+Device's website: http://wibeee.circutor.com/
+Documentation: https://github.com/juanjoSanz/hass_wibeee/
+"""
