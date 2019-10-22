@@ -115,6 +115,19 @@ wibeee_phase4:
     - sensor.wibeee_phase4_vrms
 ```
 
+# Set Logger in Home Assistant
+
+To setup logger for this custom component add following lines to configuration.yaml
+
+```
+logger:
+  default: warn
+  logs:
+    custom_components.sensor.wibeee: info
+```
+
+Possible log levels: info, debug, warn, ...
+
 # Example View in Home Assistant
 
 
