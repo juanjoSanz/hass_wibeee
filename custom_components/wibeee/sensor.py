@@ -3,32 +3,52 @@ Support for Energy consumption Sensors from Circutor
 
 Device's website: http://wibeee.circutor.com/
 Documentation: https://github.com/juanjoSanz/hass_wibeee/
+
 """
 
+import asyncio
 import logging
+import voluptuous as vol
 from datetime import timedelta
 
-import voluptuous as vol
-
+import aiohttp
+import async_timeout
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+import xmltodict
 from xml.etree import ElementTree
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
 
-from homeassistant.const import (POWER_WATT, ENERGY_KILO_WATT_HOUR, ENERGY_WATT_HOUR,
-				 CONF_HOST, CONF_SCAN_INTERVAL, CONF_RESOURCE, CONF_METHOD) #, CONF_PHASES)
+import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.const import (
+    POWER_WATT,
+    ENERGY_KILO_WATT_HOUR,
+    ENERGY_WATT_HOUR,
+    CONF_HOST,
+    CONF_SCAN_INTERVAL,
+    CONF_RESOURCE,
+    CONF_METHOD
+) #, CONF_PHASES)
+
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.event import async_track_utc_time_change, async_call_later
+from homeassistant.util import dt as dt_util
 
 
+__version__ = '0.0.1'
 
 _LOGGER = logging.getLogger(__name__)
+
 _RESOURCE = 'http://{}/en/status.xml'
-url = ""
+
+BASE_URL = 'http://{0}{1}'
+API_PATH = '/en/status.xml'
+
 
 DOMAIN = 'wibeee_energy'
 DEFAULT_NAME = 'Wibeee Energy Consumption Sensor'
@@ -40,15 +60,14 @@ DEFAULT_PHASES = 3
 
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,    
+    vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,
     vol.Optional(CONF_RESOURCE, default=DEFAULT_RESOURCE): cv.string,
     vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
     vol.Optional(CONF_METHOD, default=DEFAULT_METHOD): vol.In(['GET']),
 #    vol.Optional(CONF_PHASES, default=DEFAULT_PHASES): vol.In([1, 3]),
 })
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=10)   # Default value
-
+SCAN_INTERVAL = 1 # seconds
 
 SENSOR_TYPES = {
     'vrms': ['Vrms', 'V'],
@@ -64,49 +83,60 @@ SENSOR_TYPES = {
     'energia_reactiva_cap': ['Capacitive Reactive Energy', 'VArCh']
 }
 
-
-
-def setup_platform(hass, config, add_devices, discovery_info=None):
+@asyncio.coroutine
+#def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
+def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the RESTful sensor."""
+    _LOGGER.info("Setting up Wibeee Sensors...")
+
     name = "wibeee"
     host = config.get(CONF_HOST)
-    scan_interval = config.get(CONF_SCAN_INTERVAL)
 
-    # Create a dataº fetcher. Then make first call
+    # Create a DATA fetcher.
     try:
-        wibeee_data = WibeeeData(host, scan_interval)
+        wibeee_data = WibeeeData(hass, host)
     except ValueError as error:
         _LOGGER.error(error)
         return False
 
-    _LOGGER.info("Response: %s", wibeee_data.data)
-    tree = ElementTree.fromstring(wibeee_data.data)
-    
+    # Then make first call to get sensors
+    first_data = wibeee_data.get_sensor_names()
+    if first_data == None:
+        _LOGGER.error("No info fetched, unable to setup component")
+        return(False)
+
+
+
     devices = []
-    for item in tree:
+
+    for key,value in first_data.items():
       try:
-        sensor_id = item.tag
-        sensor_phase,sensor_name = item.tag.split("_",1)
+        sensor_id = key
+        sensor_phase,sensor_name = key.split("_",1)
+        #sensor_phase = sensor_phase.replace("fase4","total")
+        #sensor_phase = sensor_phase.replace("fase","phase")
         sensor_phase = sensor_phase.replace("fase","")
-        sensor_value = item.text
-
-        _LOGGER.info("Adding sensor %s with value %s", sensor_id, sensor_value)
-
-        devices.append(WibeeeSensor(hass, wibeee_data, name, sensor_id, sensor_phase, sensor_name,sensor_value))
+        sensor_value = value
+        _LOGGER.debug("Adding entity [phase:%s][sensor:%s][value:%s]", sensor_phase, sensor_id, sensor_value)
+        devices.append(WibeeeSensor(name, sensor_id, sensor_phase, sensor_name,sensor_value))
       except:
         pass
 
-    add_devices(devices, True)
+    wibeee_data.add_devices(devices)
+    async_add_entities(devices, True)
+    #async_add_devices(devices, True)
+    #await wibeee_data.fetching_data()
+    async_call_later(hass, SCAN_INTERVAL, wibeee_data.fetching_data)
+    _LOGGER.info("Setup completed!")
+    return(True)
 
 
 
 class WibeeeSensor(Entity):
     """Implementation of Wibeee sensor."""
 
-    def __init__(self, hass, wibeee_data, name, sensor_id, sensor_phase, sensor_name, sensor_value):
+    def __init__(self, name, sensor_id, sensor_phase, sensor_name, sensor_value):
         """Initialize the sensor."""
-        self._hass = hass
-        self.wibeee_data = wibeee_data
         self._sensor_id = sensor_id
         self._type = name
         self._sensor_phase = "Phase" + sensor_phase
@@ -117,61 +147,113 @@ class WibeeeSensor(Entity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return self._type + "_" + self._sensor_phase + "_" + self._sensor_name
+        return(self._type + "_" + self._sensor_phase + "_" + self._sensor_name)
+
+
+    @property
+    def state(self):
+        """Retrieve latest state."""
+        return(self._state)
+
+    @property
+    def should_poll(self):
+        """No polling needed."""
+        return(False)
 
     @property
     def unit_of_measurement(self):
         """Return the unit the value is expressed in."""
-        return self._unit_of_measurement
+        return(self._unit_of_measurement)
 
-    @property
-    def state(self):
-        """Return the state of the device."""
-        return self._state
+    @asyncio.coroutine
+    def async_update(self):
+        """Get the latest data and updates the states."""
+        _LOGGER.info("async_update for sensor " + self._sensor_id)
+        pass
 
-    def update(self):
-        """Get the latest data from API and updates the states."""
-        # Call the API for new data. Each sensor will re-trigger this
-        # same exact call, but that's fine. Results should be cached for
-        # a short period of time to prevent hitting API limits.
-        self.wibeee_data.update()
-
-        try:
-            tree = ElementTree.fromstring(self.wibeee_data.data)
-
-            for item in tree:
-
-                sensor_id = item.tag
-                sensor_value = item.text
-
-                if sensor_id == self._sensor_id:
-                   self._state = sensor_value
-
-        except:
-            _LOGGER.warning("Could not update status for %s", self._sensor_id)
 
 
 class WibeeeData(object):
-    """Gets the latest data from HP ILO."""
-
-    def __init__(self, host, scan_interval):
+    """Gets the latest data from Wibeee sensors."""
+    def __init__(self, hass, host):
         """Initialize the data object."""
-        self._host = host
-        self._url = _RESOURCE.format(host)
-        self._scan_interval = scan_interval
-        #MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=int(self._scan_interval))
-
+        self.timeout = 0.5
+        self.api_url = BASE_URL.format(host, API_PATH)
+        #self.sensor_names = ""
         self.data = None
+        self.devices = None
+        #self.devices_keys = None
+        self.hass = hass
 
-        self.update()
+    def get_sensor_names(self):
+        """Make first Get call to Initialize sensor names"""
+        try:
+            xml_data = requests.get(self.api_url, timeout=10).content
+            _LOGGER.debug("First item retrieved from %s - %s", self.api_url, xml_data)
+            dict_data = xmltodict.parse(xml_data)
+            _LOGGER.debug("Dict data: " + str(dict_data["response"]))
+            self.data = dict_data["response"]
+            #self.devices_keys = dict_data["response"].keys()
+            return(self.data)
+        except ValueError as error:
+            raise ValueError("Unable to obtain any response from %s, %s", self.api_url, error)
 
-    #@Throttle(MIN_TIME_BETWEEN_UPDATES)
-    def update(self):
-        """Get the latest data"""
+    def add_devices(self, _devices):
+        """Set devices list"""
+        self.devices = _devices
+
+    async def fetching_data(self, *_):
+        """Get the latest data and update the states"""
+
+        def try_again(err: str):
+            """Retry in 10 seconds."""
+            seconds = 0.5
+            _LOGGER.error("Retrying in %i seconds: %s", seconds, err)
+            async_call_later(self.hass, seconds, self.fetching_data)
 
         try:
-            response = requests.get(self._url, timeout=10)
-            self.data = response.content
-        except ValueError as error:
-            raise ValueError("Unable to obtain any response from %s, %s", self._url, error)
+            websession = async_get_clientsession(self.hass)
+            with async_timeout.timeout(self.timeout, loop=self.hass.loop):
+                resp = await websession.get(self.api_url)
+            if resp.status != 200:
+                try_again("{} returned {}".format(resp.api_url, resp.status))
+                return
+            _LOGGER.debug("Data = %s", self.data)
+            xml_data = await resp.text()
+            dict_data = xmltodict.parse(xml_data)
+            self.data = dict_data["response"]
 
+        #except (asyncio.TimeoutError, aiohttp.ClientError) as err:
+        #    try_again(err)
+        #    return
+
+        except ValueError as error:
+            raise ValueError("Unable to obtain any response from %s, %s", self.api_url, error)
+            self.data = None
+            return(False)
+
+        await self.updating_devices()
+        async_call_later(self.hass, SCAN_INTERVAL, self.fetching_data)
+
+
+    async def updating_devices(self, *_):
+        """Find the current data from self.data."""
+        if not self.data:
+            return
+
+        # Update all devices
+        _LOGGER.debug("Wibeee updating_devices()")
+
+        tasks = []
+        for dev in self.devices:
+            new_state = None
+            if self.data[dev._sensor_id]:
+                new_state = self.data[dev._sensor_id]
+
+            # pylint: disable=protected-access
+            if new_state != dev._state:
+                dev._state = new_state
+                tasks.append(dev.async_update_ha_state())
+
+        if tasks:
+             await asyncio.wait(tasks)
