@@ -123,7 +123,7 @@ To setup logger for this custom component add following lines to configuration.y
 logger:
   default: warn
   logs:
-    custom_components.sensor.wibeee: info
+    custom_components.wibeee.sensor: info
 ```
 
 Possible log levels: info, debug, warn, ...
