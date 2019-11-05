@@ -139,3 +139,17 @@ Possible log levels: info, debug, warn, ...
 
 Home Assistant community
 https://community.home-assistant.io/t/new-integration-energy-monitoring-device-circutor-wibeee/45276
+
+## custom_components examples
+
+YR Sensor (async)
+https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/yr/sensor.py
+RFLink Sensor (async)
+https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/rflink/sensor.py
+Blueprint
+https://github.com/custom-components/blueprint/blob/master/custom_components/blueprint/sensor.py
+Youtube Sensor
+https://github.com/custom-components/youtube/blob/master/custom_components/youtube/sensor.py
+Other
+https://github.com/kstaniek/hass-ampio/blob/master/custom_components/sensor/ampio.py
+https://github.com/custom-components/sensor.versions/blob/master/custom_components/sensor/versions.py
