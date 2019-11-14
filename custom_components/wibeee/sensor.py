@@ -67,7 +67,10 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 #    vol.Optional(CONF_PHASES, default=DEFAULT_PHASES): vol.In([1, 3]),
 })
 
+MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=1)   # Default value
 SCAN_INTERVAL = 1 # seconds
+RETRY_INTERVAL = 0.2 # seconds
+
 
 SENSOR_TYPES = {
     'vrms': ['Vrms', 'V'],
@@ -206,10 +209,9 @@ class WibeeeData(object):
         """Get the latest data and update the states"""
 
         def try_again(err: str):
-            """Retry in 10 seconds."""
-            seconds = 0.5
-            _LOGGER.error("Retrying in %i seconds: %s", seconds, err)
-            async_call_later(self.hass, seconds, self.fetching_data)
+            """Retry in RETRY_INTERVAL seconds."""
+            _LOGGER.error("Retrying in %i seconds: %s", RETRY_INTERVAL, err)
+            async_call_later(self.hass, RETRY_INTERVAL, self.fetching_data)
 
         try:
             websession = async_get_clientsession(self.hass)
@@ -222,15 +224,15 @@ class WibeeeData(object):
             xml_data = await resp.text()
             dict_data = xmltodict.parse(xml_data)
             self.data = dict_data["response"]
-
-        #except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-        #    try_again(err)
-        #    return
-
-        except ValueError as error:
-            raise ValueError("Unable to obtain any response from %s, %s", self.api_url, error)
+        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
+            _LOGGER.info("Retrying after error: %s", err)
+            try_again(err)
+            return
+        except ValueError as err:
+            raise ValueError("Unable to obtain any response from %s, %s", self.api_url, err)
             self.data = None
-            return(False)
+            try_again(err)
+            return
 
         await self.updating_devices()
         async_call_later(self.hass, SCAN_INTERVAL, self.fetching_data)
