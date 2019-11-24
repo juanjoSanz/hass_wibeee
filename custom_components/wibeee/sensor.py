@@ -19,7 +19,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 import xmltodict
 from xml.etree import ElementTree
-from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+#from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
 
 import homeassistant.helpers.config_validation as cv
@@ -30,9 +30,11 @@ from homeassistant.const import (
     ENERGY_WATT_HOUR,
     CONF_HOST,
     CONF_SCAN_INTERVAL,
+#    CONF_RETRY_INTERVAL
     CONF_RESOURCE,
     CONF_METHOD
-) #, CONF_PHASES)
+#    CONF_PHASES)
+)
 
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity import Entity
@@ -40,7 +42,7 @@ from homeassistant.helpers.event import async_track_utc_time_change, async_call_
 from homeassistant.util import dt as dt_util
 
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,22 +56,23 @@ DOMAIN = 'wibeee_energy'
 DEFAULT_NAME = 'Wibeee Energy Consumption Sensor'
 DEFAULT_HOST = ''
 DEFAULT_RESOURCE = 'http://{}/en/status.xml'
-DEFAULT_SCAN_INTERVAL = 10
-DEFAULT_METHOD = "GET"
+DEFAULT_SCAN_INTERVAL = 2
+#DEFAULT_SCAN_INTERVAL = 0.5
+DEFAULT_ENABLE_RETRY = False
 DEFAULT_PHASES = 3
 
+CONF_ENABLE_RETRY = "enable_retry"
+CONF_RETRY_INTERVAL=0.5
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,
     vol.Optional(CONF_RESOURCE, default=DEFAULT_RESOURCE): cv.string,
     vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
-    vol.Optional(CONF_METHOD, default=DEFAULT_METHOD): vol.In(['GET']),
+# vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
+    vol.Optional(CONF_ENABLE_RETRY, default=DEFAULT_ENABLE_RETRY): cv.boolean,
 #    vol.Optional(CONF_PHASES, default=DEFAULT_PHASES): vol.In([1, 3]),
 })
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=1)   # Default value
-SCAN_INTERVAL = 1 # seconds
-RETRY_INTERVAL = 0.2 # seconds
 
 
 SENSOR_TYPES = {
@@ -94,10 +97,12 @@ def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
 
     name = "wibeee"
     host = config.get(CONF_HOST)
+    scan_interval = config.get(CONF_SCAN_INTERVAL)
+    enable_retry = config.get(CONF_ENABLE_RETRY)
 
     # Create a DATA fetcher.
     try:
-        wibeee_data = WibeeeData(hass, host)
+        wibeee_data = WibeeeData(hass, host, scan_interval, enable_retry)
     except ValueError as error:
         _LOGGER.error(error)
         return False
@@ -129,7 +134,7 @@ def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     async_add_entities(devices, True)
     #async_add_devices(devices, True)
     #await wibeee_data.fetching_data()
-    async_call_later(hass, SCAN_INTERVAL, wibeee_data.fetching_data)
+    async_call_later(hass, scan_interval, wibeee_data.fetching_data)
     _LOGGER.info("Setup completed!")
     return(True)
 
@@ -178,8 +183,9 @@ class WibeeeSensor(Entity):
 
 class WibeeeData(object):
     """Gets the latest data from Wibeee sensors."""
-    def __init__(self, hass, host):
+    def __init__(self, hass, host, scan_interval, enable_retry):
         """Initialize the data object."""
+        _LOGGER.debug("Initializating WibeeeData with host:%s, scan_interval:%s, enable_retry:%s", host, scan_interval, enable_retry)
         self.timeout = 0.5
         self.api_url = BASE_URL.format(host, API_PATH)
         #self.sensor_names = ""
@@ -187,6 +193,8 @@ class WibeeeData(object):
         self.devices = None
         #self.devices_keys = None
         self.hass = hass
+        self.scan_interval = scan_interval
+        self.enable_retry = enable_retry
 
     def get_sensor_names(self):
         """Make first Get call to Initialize sensor names"""
@@ -209,9 +217,12 @@ class WibeeeData(object):
         """Get the latest data and update the states"""
 
         def try_again(err: str):
-            """Retry in RETRY_INTERVAL seconds."""
-            _LOGGER.error("Retrying in %i seconds: %s", RETRY_INTERVAL, err)
-            async_call_later(self.hass, RETRY_INTERVAL, self.fetching_data)
+            """Retry in CONF_RETRY_INTERVAL seconds."""
+            if self.enable_retry:
+                _LOGGER.error("Retrying in %i seconds: %s", CONF_RETRY_INTERVAL, err)
+                async_call_later(self.hass, CONF_RETRY_INTERVAL, self.fetching_data)
+            else:
+                _LOGGER.debug("Retry skipped *CONF_ENABLE_RETRY* %s", CONF_ENABLE_RETRY)
 
         try:
             websession = async_get_clientsession(self.hass)
@@ -225,17 +236,16 @@ class WibeeeData(object):
             dict_data = xmltodict.parse(xml_data)
             self.data = dict_data["response"]
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            _LOGGER.info("Retrying after error: %s", err)
+            _LOGGER.info("Retrying after TimeoutError or ClientError: %s", err)
             try_again(err)
             return
         except ValueError as err:
             raise ValueError("Unable to obtain any response from %s, %s", self.api_url, err)
-            self.data = None
             try_again(err)
             return
 
         await self.updating_devices()
-        async_call_later(self.hass, SCAN_INTERVAL, self.fetching_data)
+        async_call_later(self.hass, self.scan_interval, self.fetching_data)
 
 
     async def updating_devices(self, *_):
