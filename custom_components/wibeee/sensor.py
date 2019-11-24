@@ -136,7 +136,7 @@ def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     async_add_entities(devices, True)
     #async_add_devices(devices, True)
     #await wibeee_data.fetching_data()
-    async_call_later(hass, scan_interval, wibeee_data.fetching_data)
+    async_call_later(hass, CONF_SCAN_INTERVAL, wibeee_data.fetching_data)
     _LOGGER.info("Setup completed!")
     return(True)
 
@@ -247,7 +247,7 @@ class WibeeeData(object):
             return
 
         await self.updating_devices()
-        async_call_later(self.hass, self.scan_interval, self.fetching_data)
+        async_call_later(self.hass, CONF_SCAN_INTERVAL, self.fetching_data)
 
 
     async def updating_devices(self, *_):
