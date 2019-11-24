@@ -6,6 +6,8 @@ Documentation: https://github.com/juanjoSanz/hass_wibeee/
 
 """
 
+REQUIREMENTS = ["xmltodict"]
+
 import asyncio
 import logging
 import voluptuous as vol
