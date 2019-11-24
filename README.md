@@ -154,6 +154,9 @@ https://github.com/custom-components/blueprint/blob/master/custom_components/blu
 Youtube Sensor
 https://github.com/custom-components/youtube/blob/master/custom_components/youtube/sensor.py
 
+Linky Energy Sensor
+https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/linky/sensor.py
+
 Other
 https://github.com/kstaniek/hass-ampio/blob/master/custom_components/sensor/ampio.py
 https://github.com/custom-components/sensor.versions/blob/master/custom_components/sensor/versions.py
