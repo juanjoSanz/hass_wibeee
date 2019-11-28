@@ -160,3 +160,6 @@ https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/componen
 Other
 https://github.com/kstaniek/hass-ampio/blob/master/custom_components/sensor/ampio.py
 https://github.com/custom-components/sensor.versions/blob/master/custom_components/sensor/versions.py
+
+Solax (async)
+https://github.com/squishykid/home-assistant/blob/23ca4160036f26e9ad08729950ae496b0aabecd0/homeassistant/components/solax/sensor.py
