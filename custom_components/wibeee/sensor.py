@@ -237,8 +237,10 @@ class WibeeeData(object):
                 return(None)
             else:
                 xml_data = await resp.text()
+                _LOGGER.debug("RAW Response from %s: %s)", self.url_api, xml_data)
                 dict_data = xmltodict.parse(xml_data)
                 self.data = dict_data["response"]
+                _LOGGER.debug("Dict Response: %s)", self.data)
         except ValueError as error:
             raise ValueError("Unable to obtain any response from %s, %s", self.url_api, error)
 
@@ -247,6 +249,7 @@ class WibeeeData(object):
 
         for key,value in self.data.items():
           try:
+            _LOGGER.debug("Processing sensor [key:%s] [value:%s]", key, value)  
             sensor_id = key
             sensor_phase,sensor_name = key.split("_",1)
             #sensor_phase = sensor_phase.replace("fase4","total")
