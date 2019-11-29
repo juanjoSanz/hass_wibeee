@@ -259,7 +259,7 @@ class WibeeeData(object):
             _LOGGER.debug("Adding entity [phase:%s][sensor:%s][value:%s]", sensor_phase, sensor_id, sensor_value)
             tmp_sensors.append(WibeeeSensor(self, self.sensor_name_suffix, sensor_id, sensor_phase, sensor_name,sensor_value))
           except:
-            _LOGGER.debug(f"Unable to create WibeeeSensor Entities for key {key} and value {value}")
+            _LOGGER.error(f"Unable to create WibeeeSensor Entities for key {key} and value {value}")
 
         # Add sensors
         self.sensors = tmp_sensors
