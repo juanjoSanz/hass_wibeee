@@ -26,9 +26,9 @@ Example XML are listed in hithub repository
 
 # Home Assistant configuration
 
-1.- Copy custom comonent into 
+1.- Clone repo into `<hass_folder>/custom_components`
 ```
-<hass_folder>/custom_components/sensor/wibeee.py
+git clone https://github.com/abacao/hass_wibeee.git <hass_folder>/custom_components/wibeee
 ```
 
 2.- Add device to home assistant configuration file configuration.yaml
@@ -36,11 +36,10 @@ Example XML are listed in hithub repository
 ```
 - platform: wibeee
   host: 192.168.xx.xx
-  scan_interval: 5
 ```
-*name* tag removed due to incompatibilities
 
-3.- Add new created sensors to groups.yaml (optional)
+Optional
+3.- Add new created sensors to groups.yaml
 
 ```
 supplies_view:
@@ -52,11 +51,9 @@ supplies_view:
     - group.wibeee_phase2
     - group.wibeee_phase3
     - group.wibeee_phase4
-
-....
 ....
 
-
+....
 wibeee_phase1:
   name: 'Wibeee Phase 1'
   entities:
