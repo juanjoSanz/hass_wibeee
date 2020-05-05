@@ -68,7 +68,7 @@ DEFAULT_NAME = 'Wibeee Energy Consumption Sensor'
 DEFAULT_HOST = ''
 DEFAULT_RESOURCE = 'http://{}/en/status.xml'
 #DEFAULT_RESOURCE = 'http://{}:{}/{}'  {hostname} {port} {api_path}
-DEFAULT_SCAN_INTERVAL = 2
+DEFAULT_SCAN_INTERVAL = 60
 #DEFAULT_SCAN_INTERVAL = 0.5
 DEFAULT_PHASES = 3
 
@@ -84,7 +84,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 })
 
 #MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=1)
-SCAN_INTERVAL = timedelta(seconds=1)
+SCAN_INTERVAL = timedelta(seconds=10)
 
 SENSOR_TYPES = {
     'vrms': ['Vrms', 'V'],
