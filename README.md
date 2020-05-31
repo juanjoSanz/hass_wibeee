@@ -34,6 +34,7 @@ git clone https://github.com/abacao/hass_wibeee.git <hass_folder>/custom_compone
 2.- Add device to home assistant configuration file configuration.yaml
 
 ```
+sensor:
 - platform: wibeee
   host: 192.168.xx.xx
 ```
