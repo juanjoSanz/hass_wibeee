@@ -70,7 +70,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
 })
 
-SCAN_INTERVAL = timedelta(seconds=10)
+SCAN_INTERVAL = timedelta(seconds=15)
 
 SENSOR_TYPES = {
     'vrms': ['Vrms', 'V'],
@@ -165,7 +165,7 @@ class WibeeeSensor(Entity):
     @property
     def unique_id(self) -> str:
         """Return a unique ID."""
-        return #self._unique_id
+        return 
 
 
 class WibeeeData(object):
@@ -181,8 +181,6 @@ class WibeeeData(object):
         self.timeout = 10
         self.session = async_get_clientsession(hass)
 
-        #self.sensor_names = ""
-        #self.sensors_keys = None
         self.sensors = None
         self.data = None
 
